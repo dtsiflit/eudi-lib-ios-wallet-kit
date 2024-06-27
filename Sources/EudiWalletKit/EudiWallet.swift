@@ -49,9 +49,11 @@ public final class EudiWallet: ObservableObject {
 	public var openID4VciRedirectUri: String = "eudi-openid4ci://authorize"
 	/// Use iPhone Secure Enclave to protect keys and perform cryptographic operations. Defaults to true (if available)
 	public var useSecureEnclave: Bool { didSet { if !SecureEnclave.isAvailable { useSecureEnclave = false } } }
-	
+    /// Requests can be made towards endpoints that use self signed certificates
+    public var usesSelfSignedDelegation: Bool
+
 	/// Initialize a wallet instance. All parameters are optional.
-	public init(storageType: StorageType = .keyChain, serviceName: String = "eudiw", accessGroup: String? = nil, trustedReaderCertificates: [Data]? = nil, userAuthenticationRequired: Bool = true, verifierApiUri: String? = nil, openID4VciIssuerUrl: String? = nil, openID4VciClientId: String? = nil, openID4VciRedirectUri: String? = nil) {
+	public init(storageType: StorageType = .keyChain, serviceName: String = "eudiw", accessGroup: String? = nil, trustedReaderCertificates: [Data]? = nil, userAuthenticationRequired: Bool = true, verifierApiUri: String? = nil, openID4VciIssuerUrl: String? = nil, openID4VciClientId: String? = nil, openID4VciRedirectUri: String? = nil, usesSelfSignedDelegation: Bool = false) {
 		let keyChainObj = KeyChainStorageService(serviceName: serviceName, accessGroup: accessGroup)
 		let storageService = switch storageType { case .keyChain:keyChainObj }
 		storage = StorageManager(storageService: storageService)
@@ -65,6 +67,7 @@ public final class EudiWallet: ObservableObject {
 		self.openID4VciClientId = openID4VciClientId
 		if let openID4VciRedirectUri { self.openID4VciRedirectUri = openID4VciRedirectUri }
 		useSecureEnclave = SecureEnclave.isAvailable
+        self.usesSelfSignedDelegation = usesSelfSignedDelegation
 	}
 	
 	/// Prepare issuing

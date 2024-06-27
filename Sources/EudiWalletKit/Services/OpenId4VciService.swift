@@ -37,8 +37,10 @@ public class OpenId4VCIService: NSObject, ASWebAuthenticationPresentationContext
 	static var metadataCache = [String: CredentialOffer]()
 	
 	init(issueRequest: IssueRequest, credentialIssuerURL: String, clientId: String, callbackScheme: String) {
-		self.issueReq = issueRequest
+		
+        self.issueReq = issueRequest
 		self.credentialIssuerURL = credentialIssuerURL
+
 		logger = Logger(label: "OpenId4VCI")
 		config = .init(clientId: clientId, authFlowRedirectionURI: URL(string: callbackScheme)!)
 	}
@@ -76,7 +78,7 @@ public class OpenId4VCIService: NSObject, ASWebAuthenticationPresentationContext
 	///   - format: format of the exchanged data
 	/// - Returns: The data of the document
 	public func resolveOfferDocTypes(uriOffer: String, format: DataFormat = .cbor) async throws -> OfferedIssueModel {
-		let result = await CredentialOfferRequestResolver().resolve(source: try .init(urlString: uriOffer))
+        let result = await CredentialOfferRequestResolver(usesSelfSignedDelegation: config.usesSelfSignedDelegation).resolve(source: try .init(urlString: uriOffer))
 		switch result {
 		case .success(let offer):
 			let code: Grants.PreAuthorizedCode? = switch offer.grants {	case .preAuthorizedCode(let preAuthorizedCode):	preAuthorizedCode; case .both(_, let preAuthorizedCode):	preAuthorizedCode; case .authorizationCode(_), .none: nil	}
@@ -118,11 +120,11 @@ public class OpenId4VCIService: NSObject, ASWebAuthenticationPresentationContext
 	
 	func issueByDocType(_ docType: String, format: DataFormat, claimSet: ClaimSet? = nil) async throws -> String {
 		let credentialIssuerIdentifier = try CredentialIssuerId(credentialIssuerURL)
-		let issuerMetadata = await CredentialIssuerMetadataResolver().resolve(source: .credentialIssuer(credentialIssuerIdentifier))
+        let issuerMetadata = await CredentialIssuerMetadataResolver(usesSelfSignedDelegation: config.usesSelfSignedDelegation).resolve(source: .credentialIssuer(credentialIssuerIdentifier))
 		switch issuerMetadata {
 		case .success(let metaData):
 			if let authorizationServer = metaData?.authorizationServers.first, let metaData {
-				let authServerMetadata = await AuthorizationServerMetadataResolver().resolve(url: authorizationServer)
+                let authServerMetadata = await AuthorizationServerMetadataResolver(usesSelfSignedDelegation: config.usesSelfSignedDelegation).resolve(url: authorizationServer)
 				let (credentialConfigurationIdentifier, _) = try getCredentialIdentifier(credentialsSupported: metaData.credentialsSupported, docType: docType, format: format)
 				let offer = try CredentialOffer(credentialIssuerIdentifier: credentialIssuerIdentifier, credentialIssuerMetadata: metaData, credentialConfigurationIdentifiers: [credentialConfigurationIdentifier], grants: nil, authorizationServerMetadata: try authServerMetadata.get())
 				// Authorize with auth code flow
