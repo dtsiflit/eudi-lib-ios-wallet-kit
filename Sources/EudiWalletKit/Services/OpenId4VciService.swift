@@ -36,13 +36,13 @@ public class OpenId4VCIService: NSObject, ASWebAuthenticationPresentationContext
 	let alg = JWSAlgorithm(.ES256)
 	static var metadataCache = [String: CredentialOffer]()
 	
-	init(issueRequest: IssueRequest, credentialIssuerURL: String, clientId: String, callbackScheme: String) {
-		
+	init(issueRequest: IssueRequest, credentialIssuerURL: String, clientId: String, callbackScheme: String, usesSelfSignedDelegation: Bool = false) {
+
         self.issueReq = issueRequest
 		self.credentialIssuerURL = credentialIssuerURL
 
 		logger = Logger(label: "OpenId4VCI")
-		config = .init(clientId: clientId, authFlowRedirectionURI: URL(string: callbackScheme)!)
+		config = .init(clientId: clientId, authFlowRedirectionURI: URL(string: callbackScheme)!, usesSelfSignedDelegation: usesSelfSignedDelegation)
 	}
 	
 	fileprivate func initSecurityKeys(_ useSecureEnclave: Bool) throws {
